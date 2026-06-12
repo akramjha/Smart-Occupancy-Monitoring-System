@@ -3,10 +3,7 @@ import cv2
 from datetime import datetime
 import os
 
-# =========================
-# CONFIGURATION
-# =========================
-
+# config
 ALERT_THRESHOLD = 2
 CONFIDENCE_THRESHOLD = 0.50
 max_people_detected = 0
@@ -14,43 +11,34 @@ start_time = datetime.now()
 last_screenshot_time = None
 LOG_FILE = "logs/detection_log.csv"
 
-# Create folders if they don't exist
+# create folders if they not exist
 os.makedirs("logs", exist_ok=True)
 os.makedirs("screenshots", exist_ok=True)
 
-# Create CSV log file if it doesn't exist
+# create CSV log file if it not exist
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, "w") as f:
         f.write("Timestamp,PeopleCount\n")
 
-# =========================
-# LOAD MODEL
-# =========================
-
+# load model
 model = YOLO("yolov8n.pt")
 
-# =========================
-# OPEN WEBCAM
-# =========================
-
+# open webcam
 cap = cv2.VideoCapture(0)
 
 while True:
 
-    # Read webcam frame
+    # read webcam 
     success, frame = cap.read()
 
     if not success:
         print("Failed to access webcam.")
         break
 
-    # Run YOLO detection
     results = model(frame)
 
-    # Reset people counter
     people_count = 0
 
-    # Process detections
     for result in results:
 
         for box in result.boxes:
@@ -60,14 +48,14 @@ while True:
 
             label = model.names[cls]
 
-            # Only detect people
+            # detect people
             if label == "person" and confidence > CONFIDENCE_THRESHOLD:
 
                 people_count += 1
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-                # Draw bounding box
+                # box
                 cv2.rectangle(
                     frame,
                     (x1, y1),
@@ -76,7 +64,7 @@ while True:
                     2
                 )
 
-                # Display label and confidence
+                # label, confidence
                 cv2.putText(
                     frame,
                     f"{label} {confidence:.2f}",
@@ -102,7 +90,7 @@ while True:
             f"{people_count},{status},{max_people_detected}"
         )
 
-    # Display people count
+    # display people count
     cv2.putText(
         frame,
         f"People Count: {people_count}",
@@ -135,9 +123,7 @@ while True:
             2
         )
 
-    # =========================
-    # CROWD ALERT
-    # =========================
+    # crowd alert
     if people_count > ALERT_THRESHOLD:
         status = "CROWDED"
         cv2.putText(
@@ -150,7 +136,7 @@ while True:
             2
         )
 
-        # Save screenshot
+        # save ss
         current_time = datetime.now()
 
         if(
@@ -170,10 +156,7 @@ while True:
 
             last_screenshot_time = current_time
 
-    # =========================
-    # LOG DATA
-    # =========================
-
+    # log data
     timestamp = datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S"
     )
@@ -217,17 +200,15 @@ while True:
     2
     )
 
-    # Show video
+    # video
     cv2.imshow(
         "Occupancy Monitoring System",
         frame
     )
 
-    # Press ESC to exit
+    # exit
     if cv2.waitKey(1) == 27:
         break
 
-
-# Cleanup
 cap.release()
 cv2.destroyAllWindows()
